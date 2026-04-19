@@ -16,19 +16,19 @@ from fastapi.responses import RedirectResponse
 
 
 
-# ================= 核心路径配置 =================
+# ================= 路径配置 =================
 PLUGIN_DIR = Path(__file__).parent
 BACKUP_DIR = PLUGIN_DIR.parent
 
-# 正确获取 FastAPI 实例（你原来的写法，不报错）
 app: FastAPI = nonebot.get_app()
 driver = get_driver()
 
 security = HTTPBasic()
 
 USERNAME = "admin"
-PASSWORD = "songyunzhang"  # 改成你自己的
+PASSWORD = "songyunzhang"  # 本人实例校园网才可访问,不做加密，使用可自行修改
 
+# ================= 工具函数 =================
 def verify(credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, USERNAME)
     correct_password = secrets.compare_digest(credentials.password, PASSWORD)
@@ -50,7 +50,6 @@ def get_ip(request: Request):
     return request.client.host
 
 
-# ================= 工具函数 =================
 def get_plugin_files():
     files = []
     for f in os.listdir(PLUGIN_DIR):
