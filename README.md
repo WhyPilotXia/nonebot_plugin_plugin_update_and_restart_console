@@ -1,0 +1,2 @@
+# nonebot_plugin_plugin_update_and_restart_console
+通过控制台远程更新插件，重启机器人
