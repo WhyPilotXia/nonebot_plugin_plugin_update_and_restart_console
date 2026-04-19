@@ -54,7 +54,7 @@ def get_ip(request: Request):
 def get_plugin_files():
     files = []
     for f in os.listdir(PLUGIN_DIR):
-        if f.endswith(".py") and os.path.isfile(PLUGIN_DIR / f):
+        if os.path.isfile(PLUGIN_DIR / f):
             files.append(f)
     return sorted(files)
 
@@ -73,7 +73,7 @@ async def index(request: Request, user: str = Depends(verify)):
         </tr>
         """
 
-    return f"""
+    html = f"""
 <!DOCTYPE html>
 <html>
 <head>
@@ -119,6 +119,9 @@ async def index(request: Request, user: str = Depends(verify)):
 </body>
 </html>
     """
+    response = HTMLResponse(content=html)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 # ================= 上传文件 =================
 @app.post("/upload", response_class=HTMLResponse)
@@ -168,7 +171,14 @@ async def restart_bot(request: Request, user: str = Depends(verify)):
         # 延迟退出
         asyncio.get_event_loop().call_later(1, lambda: sys.exit(0))
 
-        return RedirectResponse(url="/", status_code=303)   # 303:get且返回首页
+        return HTMLResponse("""
+        <h3>🔄 正在重启...</h3>
+        <script>
+        setTimeout(() => {
+            window.location.href = "/";
+        }, 200);
+        </script>
+        """)
 
     except Exception as e:
         return HTMLResponse(f"<h3>❌ 重启失败：{e}</h3>")
