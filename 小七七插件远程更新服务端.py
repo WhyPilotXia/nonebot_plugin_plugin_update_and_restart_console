@@ -12,6 +12,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import secrets
 from fastapi import Request
+from fastapi.responses import RedirectResponse
 
 
 
@@ -129,9 +130,9 @@ async def upload_file(request: Request, file: UploadFile = File(...), user: str 
         content = await file.read()
         with open(file_path, "wb") as f:
             f.write(content)
-        return f"<h3>✅ 上传成功：{file.filename}</h3><a href='/manager'>返回</a>"
+        return f"<h3>✅ 上传成功：{file.filename}</h3><a href='/'>返回</a>"
     except Exception as e:
-        return f"<h3>❌ 上传失败：{e}</h3><a href='/manager'>返回</a>"
+        return f"<h3>❌ 上传失败：{e}</h3><a href='/'>返回</a>"
 
 # ================= 删除文件（移动到 /src 备份） =================
 @app.get("/delete", response_class=HTMLResponse)
@@ -142,30 +143,32 @@ async def delete_file(request: Request, filename: str, user: str = Depends(verif
     dst = BACKUP_DIR / filename
 
     if not src.exists():
-        return f"<h3>❌ 文件不存在</h3><a href='/manager'>返回</a>"
+        return f"<h3>❌ 文件不存在</h3><a href='/'>返回</a>"
 
     try:
         if dst.exists():
             dst.unlink()
         shutil.move(str(src), str(dst))
-        return f"<h3>✅ 已删除并备份到 /src 目录</h3><a href='/manager'>返回</a>"
+        return f"<h3>✅ 已删除并备份到 /src 目录</h3><a href='/'>返回</a>"
     except Exception as e:
-        return f"<h3>❌ 删除失败：{e}</h3><a href='/manager'>返回</a>"
+        return f"<h3>❌ 删除失败：{e}</h3><a href='/'>返回</a>"
 
 # ================= 重启机器人 =================
-@app.post("/restart", response_class=HTMLResponse)
+@app.post("/restart")
 async def restart_bot(request: Request, user: str = Depends(verify)):
     ip = get_ip(request)
     logger.error(f"[重启] IP={ip} 用户={user} 执行重启")
+
     try:
         python = sys.executable
         script = sys.argv[0]
 
         subprocess.Popen([python, script], cwd=Path(script).parent)
 
-        # 延迟退出（让HTTP响应先返回）
+        # 延迟退出
         asyncio.get_event_loop().call_later(1, lambda: sys.exit(0))
 
-        return "<h3>🔄 重启中...</h3>"
+        return RedirectResponse(url="/", status_code=303)   # 303:get且返回首页
+
     except Exception as e:
-        return f"<h3>❌ 重启失败：{e}</h3>"
+        return HTMLResponse(f"<h3>❌ 重启失败：{e}</h3>")
